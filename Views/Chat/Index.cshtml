@@ -1,0 +1,58 @@
+﻿
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Chat</h1>
+<input type="text" id="txt" />
+<input type="button" value="send" onclick="send()" /><br />
+<input type="text" id="grouptxt" />
+<input type="button" value="join" onclick="join()" /><br />
+<input type="button" value="send to group" onclick="sendgroup()" /> <br />
+<ul id="ul">
+   
+
+</ul>
+
+@section Scripts{
+
+    <script src="~/microsoft/microsoft/signalr/dist/browser/signalr.js"></script>
+    <script>
+        name = prompt("enter your name");
+        con = new signalR.HubConnectionBuilder().withUrl("/chat").build();
+        con.start();
+
+        con.on("newmessage", function (mess) {
+            $("#ul").append("<li>" + mess.username + ":" + mess.messagetxt + "</li>");
+        })
+        function send() {
+            var obj={
+                "username":name,
+                "messagetxt":$("#txt").val()
+            }
+            con.invoke("sendmessage", obj)
+        }
+
+        con.on("newmemberjoinednotification", function (username, groupname) {
+            $("#ul").append("<li>" + username + " joined " + groupname + "</li>");
+        })
+        function join() {
+            let groupname = $("#grouptxt").val();
+            let username = name;
+            con.invoke("joingroup", groupname, username);
+        }
+
+        con.on("sendmessagetomygroup", function (groupname, chatmsg) {
+            $("#ul").append("<li>" + chatmsg.username + " ( " + groupname + " ) : " + chatmsg.messagetxt + "</li>");
+        })
+        function sendgroup() {
+            let groupname = $("#grouptxt").val();
+            //let msg = $("#txt").val()
+            let chatmsg = {
+                "username": name,
+                "messagetxt": $("#txt").val()
+            }
+            con.invoke("sendmessagetogroup", groupname, chatmsg);
+        }
+    </script>
+}
